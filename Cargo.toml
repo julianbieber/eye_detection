@@ -1,0 +1,18 @@
+[package]
+name = "eye_detection"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = { version = "0.24.9", features = ["default"]}
+imageproc = "0.23.0"
+itertools = "0.12.1"
+
+[dependencies.nokhwa]
+# Use the native input backends, enable WGPU integration
+features = ["input-native", "decoding"]
+git = "https://github.com/l1npengtul/nokhwa.git" 
+branch = "0.10"
+
