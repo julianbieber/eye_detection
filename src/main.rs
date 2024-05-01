@@ -113,7 +113,15 @@ fn convolution_pass(f: f32) -> f32 {
     if f > 0.3 {
         3.0
     } else {
-        -1.0
+        0.0
+    }
+}
+
+fn threshold(f: f32) -> f32 {
+    if f > 0.3 {
+        1.0
+    } else {
+        0.0
     }
 }
 
@@ -125,7 +133,7 @@ fn eye_convolution_from_image() -> (Vec<f32>, u32, u32) {
 }
 
 fn detect_eyes(image: &ImageBuffer<Luma<u8>, Vec<u8>>) -> bool {
-    let g = grey_to_float(image, identity);
+    let g = grey_to_float(image, threshold);
     save_f32_luma(&g, "after_conversion.png");
     let s = 32 as usize;
     // let circel = create_circle_convolution(s, 0.3, 0.4, 0.05);
@@ -133,7 +141,22 @@ fn detect_eyes(image: &ImageBuffer<Luma<u8>, Vec<u8>>) -> bool {
     let eye_conv = eye_convolution_from_image();
     save_f32_luma_vec(eye_conv.1, eye_conv.2, &eye_conv.0, "circle.png");
     let kernel = Kernel::<f32>::new(&eye_conv.0[..], eye_conv.1, eye_conv.2);
-    let eye_detected = kernel.filter::<Luma<f32>, _, Luma<f32>>(&g, |channel, acc| *channel = acc);
+    let mut eye_detected = kernel.filter::<Luma<f32>, _, Luma<f32>>(&g, |channel, acc| {
+        if acc > eye_conv.0.len() as f32 / 6.0 {
+            *channel = 1.0;
+        } else {
+            dbg!(acc);
+            *channel = 0.0;
+        }
+    });
+
+    save_f32_luma(&eye_detected, "pre_eye_detected.png");
+
+    let tiny_circle_conv = create_circle_convolution(64, 0.0, 0.0, 0.04);
+    save_f32_luma_vec(64, 64, &tiny_circle_conv, "tiny.png");
+    let kernel = Kernel::<f32>::new(&tiny_circle_conv[..], 64, 64);
+    let eye_detected =
+        kernel.filter::<Luma<f32>, _, Luma<f32>>(&eye_detected, |channel, acc| *channel = acc);
     save_f32_luma(&eye_detected, "eye_detected.png");
     false
 }
